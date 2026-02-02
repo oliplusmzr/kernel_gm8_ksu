@@ -1,0 +1,62 @@
+cat <<EOF > .github/workflows/build.yml
+name: Build GM8 Kernel with KSU Next
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-kernel:
+    runs-on: ubuntu-20.04
+    
+    steps:
+    - name: Checkout Kernel Source
+      uses: actions/checkout@v3
+
+    - name: Install Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y bc bison build-essential ccache curl flex g++-multilib gcc-multilib git gnupg gperf imagemagick lib32ncurses5-dev lib32readline-dev lib32z1-dev liblz4-tool libncurses5 libncurses5-dev libsdl1.2-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc zip zlib1g-dev python2
+        sudo ln -sf /usr/bin/python2 /usr/bin/python
+
+    - name: Download Toolchain (LineageOS 4.9)
+      run: |
+        git clone --depth=1 https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_aarch64_aarch64-linux-android-4.9 toolchain
+
+    - name: Clone KernelSU Next
+      run: |
+        cd drivers
+        git clone https://github.com/rifsxd/KernelSU-Next kernelsu
+        cd ..
+
+    - name: Apply Fixes & KSU Config
+      run: |
+        sed -i 's/^YYLTYPE yylloc;$/extern YYLTYPE yylloc;/' scripts/dtc/dtc-lexer.lex.c_shipped
+        sed -i 's/defined(@val)/@val/g' kernel/timeconst.pl
+        sed -i 's/CC\t\t= \$(srctree)\/scripts\/gcc-wrapper.py \$(REAL_CC)/CC\t\t= \$(REAL_CC)/' Makefile
+
+        if ! grep -q "kernelsu/kernel/Kconfig" drivers/Kconfig; then
+            sed -i '/endmenu/i source "drivers/kernelsu/kernel/Kconfig"' drivers/Kconfig
+        fi
+
+        if ! grep -q "kernelsu/kernel/" drivers/Makefile; then
+            echo "obj-\$(CONFIG_KSU) += kernelsu/kernel/" >> drivers/Makefile
+        fi
+
+    - name: Build Kernel
+      run: |
+        export CROSS_COMPILE=\$GITHUB_WORKSPACE/toolchain/bin/aarch64-linux-android-
+        export ARCH=arm64
+        export SUBARCH=arm64
+
+        make O=out msm8937-perf_defconfig
+        
+        echo "CONFIG_KSU=y" >> out/.config
+        
+        make O=out -j\$(nproc --all)
+
+    - name: Upload Image
+      uses: actions/upload-artifact@v4
+      with:
+        name: Image.gz-dtb-KSU
+        path: out/arch/arm64/boot/Image.gz-dtb
+EOF
