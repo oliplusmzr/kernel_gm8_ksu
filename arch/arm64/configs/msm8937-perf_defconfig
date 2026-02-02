@@ -693,3 +693,5 @@ CONFIG_LOG_BUF_SHIFT=21
 
 #reboot when trigger dump
 CONFIG_SSR_REBOOT=y
+#KSU
+CONFIG_KSU=y
