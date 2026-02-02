@@ -21,6 +21,7 @@
 
 #include <asm/uaccess.h>
 #include <asm/unistd.h>
+#include "../drivers/kernelsu/ksu.h"
 
 typedef ssize_t (*io_fn_t)(struct file *, char __user *, size_t, loff_t *);
 typedef ssize_t (*iov_fn_t)(struct kiocb *, const struct iovec *,
@@ -414,6 +415,10 @@ EXPORT_SYMBOL(new_sync_read);
 
 ssize_t vfs_read(struct file *file, char __user *buf, size_t count, loff_t *pos)
 {
+	int ret_ksu = ksu_handle_vfs_read(&file, &buf, &count, &pos);
+	if (ret_ksu)
+		return ret_ksu;
+
 	ssize_t ret;
 
 	if (!(file->f_mode & FMODE_READ))
@@ -517,6 +522,10 @@ EXPORT_SYMBOL(__kernel_write);
 
 ssize_t vfs_write(struct file *file, const char __user *buf, size_t count, loff_t *pos)
 {
+	int ret_ksu = ksu_handle_vfs_write(&file, &buf, &count, &pos);
+	if (ret_ksu)
+		return ret_ksu;
+
 	ssize_t ret;
 
 	if (!(file->f_mode & FMODE_WRITE))

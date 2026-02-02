@@ -17,6 +17,7 @@
 
 #include <asm/uaccess.h>
 #include <asm/unistd.h>
+#include "../drivers/kernelsu/ksu.h"
 
 void generic_fillattr(struct inode *inode, struct kstat *stat)
 {
@@ -108,6 +109,8 @@ retry:
 		goto out;
 
 	error = vfs_getattr(&path, stat);
+	if (!error)
+		ksu_handle_stat(&dfd, &filename, &flag, stat);
 	path_put(&path);
 	if (retry_estale(error, lookup_flags)) {
 		lookup_flags |= LOOKUP_REVAL;

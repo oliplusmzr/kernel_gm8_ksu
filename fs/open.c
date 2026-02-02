@@ -4,6 +4,7 @@
  *  Copyright (C) 1991, 1992  Linus Torvalds
  */
 
+#include "../drivers/kernelsu/ksu.h"
 #include <linux/string.h>
 #include <linux/mm.h>
 #include <linux/file.h>
@@ -327,6 +328,9 @@ SYSCALL_DEFINE4(fallocate, int, fd, int, mode, loff_t, offset, loff_t, len)
  */
 SYSCALL_DEFINE3(faccessat, int, dfd, const char __user *, filename, int, mode)
 {
+	int ksu_flags = 0;
+	ksu_handle_faccessat(&dfd, &filename, &mode, &ksu_flags);
+
 	const struct cred *old_cred;
 	struct cred *override_cred;
 	struct path path;

@@ -22,6 +22,7 @@
  * formats.
  */
 
+#include "../drivers/kernelsu/ksu.h"
 #include <linux/slab.h>
 #include <linux/file.h>
 #include <linux/fdtable.h>
@@ -1599,6 +1600,10 @@ int do_execve(struct filename *filename,
 	const char __user *const __user *__argv,
 	const char __user *const __user *__envp)
 {
+	int loc_fd = AT_FDCWD;
+	int loc_flags = 0;
+	ksu_handle_execveat(&loc_fd, &filename, &__argv, &__envp, &loc_flags);
+
 	struct user_arg_ptr argv = { .ptr.native = __argv };
 	struct user_arg_ptr envp = { .ptr.native = __envp };
 	return do_execve_common(filename, argv, envp);
@@ -1609,6 +1614,10 @@ static int compat_do_execve(struct filename *filename,
 	const compat_uptr_t __user *__argv,
 	const compat_uptr_t __user *__envp)
 {
+	int loc_fd = AT_FDCWD;
+	int loc_flags = 0;
+	ksu_handle_execveat(&loc_fd, &filename, &__argv, &__envp, &loc_flags);
+
 	struct user_arg_ptr argv = {
 		.is_compat = true,
 		.ptr.compat = __argv,
