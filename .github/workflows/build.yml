@@ -27,7 +27,7 @@ jobs:
         git clone https://github.com/rifsxd/KernelSU-Next kernelsu
         cd ..
 
-- name: Apply Fixes & KSU Config
+    - name: Apply Fixes & KSU Config
       run: |
         # DTC hatası düzeltmesi
         if [ -f scripts/dtc/dtc-lexer.lex.c_shipped ]; then
