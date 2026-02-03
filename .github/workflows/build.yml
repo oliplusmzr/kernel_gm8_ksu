@@ -27,16 +27,26 @@ jobs:
         git clone https://github.com/rifsxd/KernelSU-Next kernelsu
         cd ..
 
-    - name: Apply Fixes & KSU Config
+- name: Apply Fixes & KSU Config
       run: |
-        sed -i 's/^YYLTYPE yylloc;$/extern YYLTYPE yylloc;/' scripts/dtc/dtc-lexer.lex.c_shipped
-        sed -i 's/defined(@val)/@val/g' kernel/timeconst.pl
+        # DTC hatası düzeltmesi
+        if [ -f scripts/dtc/dtc-lexer.lex.c_shipped ]; then
+            sed -i 's/^YYLTYPE yylloc;$/extern YYLTYPE yylloc;/' scripts/dtc/dtc-lexer.lex.c_shipped
+        fi
+        
+        # Timeconst hatasını SADECE DOSYA VARSA düzelt (Hatayı bu çözer)
+        if [ -f kernel/timeconst.pl ]; then
+            sed -i 's/defined(@val)/@val/g' kernel/timeconst.pl
+        fi
+        
+        # GCC Wrapper iptali
         sed -i 's/CC\t\t= \$(srctree)\/scripts\/gcc-wrapper.py \$(REAL_CC)/CC\t\t= \$(REAL_CC)/' Makefile
 
+        # KSU Config
         if ! grep -q "kernelsu/kernel/Kconfig" drivers/Kconfig; then
             sed -i '/endmenu/i source "drivers/kernelsu/kernel/Kconfig"' drivers/Kconfig
         fi
-
+        
         if ! grep -q "kernelsu/kernel/" drivers/Makefile; then
             echo "obj-\$(CONFIG_KSU) += kernelsu/kernel/" >> drivers/Makefile
         fi
